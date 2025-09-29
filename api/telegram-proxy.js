@@ -1,8 +1,7 @@
 /**
  * Serverless Function sebagai Proxy Aman ke API Telegram.
  * Menggunakan Environment Variables untuk Token dan ID rahasia.
- *
- * PENTING: Jika error ini muncul, berarti 'form-data' belum terinstal di server.
+ * * FIX: Menambahkan penanganan Content-Length dan respons non-JSON yang lebih tangguh.
  */
 
 // Menggunakan require() standar Node.js untuk modul CommonJS
@@ -36,6 +35,7 @@ module.exports = async (req, res) => {
 
     try {
         let telegramResponse;
+        let responseData; // Variabel untuk menyimpan data respons yang sudah diproses
         
         if (isPhoto && base64Image) {
             // --- LOGIKA PENGIRIMAN FOTO (sendPhoto) ---
@@ -43,7 +43,6 @@ module.exports = async (req, res) => {
             const photoBuffer = base64ToBuffer(base64Image);
             const formData = new FormData(); 
             
-            // Append photo as a Buffer for multipart upload
             formData.append('photo', photoBuffer, {
                 filename: 'captured_photo.jpeg',
                 contentType: 'image/jpeg',
@@ -52,11 +51,21 @@ module.exports = async (req, res) => {
             formData.append('caption', caption);
             formData.append('parse_mode', 'Markdown'); 
 
+            // ** PERBAIKAN PENTING: Mendapatkan Content-Length secara Asynchronous **
+            const contentLength = await new Promise(resolve => {
+                formData.getLength((err, length) => {
+                    resolve(length);
+                });
+            });
+
             // Kirim request ke Telegram (multipart/form-data)
             telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
                 body: formData,
-                headers: formData.getHeaders(), 
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Length': contentLength
+                }
             });
 
         } else {
@@ -74,15 +83,29 @@ module.exports = async (req, res) => {
             });
         }
 
-        const data = await telegramResponse.json();
-
-        if (!data.ok) {
-            console.error('Telegram API Error:', data.description);
-            // Melempar error spesifik jika Telegram API gagal
-            return res.status(400).json({ error: data.description || 'Gagal mengirim ke Telegram. Cek keaslian Token atau Chat ID Anda.' });
+        // ** PERBAIKAN PENTING: Menghindari SyntaxError: Unexpected end of JSON input **
+        const responseText = await telegramResponse.text();
+        
+        try {
+            // Coba parsing JSON
+            responseData = JSON.parse(responseText);
+        } catch (jsonError) {
+            // Jika parsing JSON gagal, artinya Telegram mengirim respons non-JSON.
+            console.error('Non-JSON Response from Telegram:', responseText);
+            // Melempar error dengan isi respons (jika ada)
+            return res.status(telegramResponse.status).json({ 
+                error: `Gagal memproses respons Telegram. Status: ${telegramResponse.status}. Respons mentah: ${responseText.substring(0, 100)}...`
+            });
         }
 
-        res.status(200).json({ success: true, telegram_data: data });
+
+        if (!responseData.ok) {
+            console.error('Telegram API Error:', responseData.description);
+            // Melempar error spesifik jika Telegram API gagal
+            return res.status(400).json({ error: responseData.description || 'Gagal mengirim ke Telegram. Cek keaslian Token atau Chat ID Anda.' });
+        }
+
+        res.status(200).json({ success: true, telegram_data: responseData });
 
     } catch (error) {
         console.error('Server Proxy Error - UNCATCHED:', error);
