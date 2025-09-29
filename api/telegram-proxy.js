@@ -2,7 +2,7 @@
  * Serverless Function sebagai Proxy Aman ke API Telegram.
  * Menggunakan Environment Variables untuk Token dan ID rahasia.
  *
- * FIX: Menggunakan require() CommonJS standar untuk 'form-data'.
+ * PENTING: Jika error ini muncul, berarti 'form-data' belum terinstal di server.
  */
 
 // Menggunakan require() standar Node.js untuk modul CommonJS
@@ -18,14 +18,14 @@ function base64ToBuffer(base64) {
 }
 
 module.exports = async (req, res) => {
-    // Verifikasi POST dan Environment Variables
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Hanya metode POST yang diizinkan.' });
+    // 1. Pengecekan Environment Variables (sudah Anda cek, bagus!)
+    if (!BOT_TOKEN || !CHAT_ID) {
+        console.error("CONFIGURATION ERROR: TELEGRAM_BOT_TOKEN atau CHAT_ID tidak ditemukan.");
+        return res.status(500).json({ error: 'Kesalahan server: Token atau ID Chat Telegram tidak diatur. Mohon cek Environment Variables Anda.' });
     }
 
-    if (!BOT_TOKEN || !CHAT_ID) {
-        // Error konfigurasi server - pengguna tidak akan melihat token ini.
-        return res.status(500).json({ error: 'Kesalahan server: Token atau ID Chat Telegram tidak diatur.' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Hanya metode POST yang diizinkan.' });
     }
 
     const { caption, base64Image, isPhoto } = req.body;
@@ -41,23 +41,21 @@ module.exports = async (req, res) => {
             // --- LOGIKA PENGIRIMAN FOTO (sendPhoto) ---
             
             const photoBuffer = base64ToBuffer(base64Image);
-            // Inisialisasi FormData menggunakan constructor yang di-require
             const formData = new FormData(); 
             
-            // Append photo as a Buffer with specific filename and content type
+            // Append photo as a Buffer for multipart upload
             formData.append('photo', photoBuffer, {
                 filename: 'captured_photo.jpeg',
                 contentType: 'image/jpeg',
             });
             formData.append('chat_id', CHAT_ID);
             formData.append('caption', caption);
-            formData.append('parse_mode', 'Markdown'); // Agar lokasi terformat benar
+            formData.append('parse_mode', 'Markdown'); 
 
             // Kirim request ke Telegram (multipart/form-data)
             telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
                 body: formData,
-                // Penting: Gunakan headers dari formData agar boundary disetel dengan benar
                 headers: formData.getHeaders(), 
             });
 
@@ -80,13 +78,14 @@ module.exports = async (req, res) => {
 
         if (!data.ok) {
             console.error('Telegram API Error:', data.description);
-            return res.status(telegramResponse.status).json({ error: data.description || 'Gagal mengirim ke Telegram. Cek Token atau Chat ID Anda.' });
+            // Melempar error spesifik jika Telegram API gagal
+            return res.status(400).json({ error: data.description || 'Gagal mengirim ke Telegram. Cek keaslian Token atau Chat ID Anda.' });
         }
 
         res.status(200).json({ success: true, telegram_data: data });
 
     } catch (error) {
-        console.error('Server Proxy Error:', error);
-        res.status(500).json({ error: 'Kesalahan internal server saat menghubungi Telegram.' });
+        console.error('Server Proxy Error - UNCATCHED:', error);
+        res.status(500).json({ error: 'Kesalahan internal server tidak terduga.' });
     }
 };
