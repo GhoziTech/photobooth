@@ -1,0 +1,11 @@
+{
+  "name": "secure-photobooth",
+  "version": "1.0.0",
+  "description": "Secure Telegram Photobooth Proxy",
+  "dependencies": {
+    "form-data": "^4.0.0"
+  },
+  "scripts": {
+    "start": "echo 'Running Static/Serverless'"
+  }
+}
