@@ -1,66 +1,72 @@
 /**
- * Serverless Function sebagai Proxy Aman ke API Telegram.
- * FIX FINAL: Menghilangkan Content-Length manual untuk menghindari UND_ERR_REQ_CONTENT_LENGTH_MISMATCH.
- * Mengandalkan Node.js fetch (undici) untuk menangani streaming multipart/form-data secara otomatis.
+ * Ini adalah Serverless Function yang berfungsi sebagai perantara (Proxy)
+ * antara frontend (index.html) dan API Telegram.
+ *
+ * TOKEN BOT dan CHAT ID HANYA tersimpan di sini sebagai variabel lingkungan (Environment Variables),
+ * dan TIDAK terlihat di kode frontend.
  */
 
-// Menggunakan require() standar Node.js untuk modul CommonJS
-const FormData = require('form-data'); 
+// Kunci Keamanan: Ambil token dan ID dari Variabel Lingkungan
+// Catatan: Variabel-variabel ini HARUS diatur di Vercel/Netlify.
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 // Fungsi utilitas untuk mengubah Data URI Base64 menjadi Buffer
 function base64ToBuffer(base64) {
     // Menghapus header dataURI (misalnya: 'data:image/jpeg;base64,')
-    const base64Data = base64.split(',')[1] || base64;
+    const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
     return Buffer.from(base64Data, 'base64');
 }
 
 module.exports = async (req, res) => {
-    // 1. Pengecekan Environment Variables 
-    if (!BOT_TOKEN || !CHAT_ID) {
-        console.error("CONFIGURATION ERROR: TELEGRAM_BOT_TOKEN atau CHAT_ID tidak ditemukan.");
-        return res.status(500).json({ error: 'Kesalahan server: Token atau ID Chat Telegram tidak diatur. Mohon cek Environment Variables Anda.' });
+    // 1. Verifikasi Metode dan Token
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Hanya metode POST yang diizinkan.' });
+        return;
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Hanya metode POST yang diizinkan.' });
+    if (!BOT_TOKEN || !CHAT_ID) {
+        // Ini adalah error SISI SERVER yang tidak akan dilihat pengguna
+        console.error("TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID tidak diatur!");
+        res.status(500).json({ error: 'Kesalahan konfigurasi server (Token/ID hilang).' });
+        return;
     }
 
     const { caption, base64Image, isPhoto } = req.body;
 
     if (!caption) {
-        return res.status(400).json({ error: 'Caption/Teks tidak boleh kosong.' });
+        res.status(400).json({ error: 'Caption/Teks tidak boleh kosong.' });
+        return;
     }
 
     try {
         let telegramResponse;
-        let responseData;
         
         if (isPhoto && base64Image) {
-            // --- LOGIKA PENGIRIMAN FOTO (sendPhoto) ---
+            // Logika Pengiriman FOTO (menggunakan FormData di sisi server)
             
             const photoBuffer = base64ToBuffer(base64Image);
-            const formData = new FormData(); 
+            const { default: FormData } = await import('form-data');
+            const formData = new FormData();
             
+            // Tambahkan file foto (sebagai buffer)
             formData.append('photo', photoBuffer, {
                 filename: 'captured_photo.jpeg',
                 contentType: 'image/jpeg',
             });
             formData.append('chat_id', CHAT_ID);
             formData.append('caption', caption);
-            formData.append('parse_mode', 'Markdown'); 
+            formData.append('parse_mode', 'Markdown');
 
-            // ** SOLUSI MISMATH:** Kita HANYA mengirim body (objek formData) dan headers 
-            // tanpa Content-Length yang sering menyebabkan mismatch di Node/Vercel.
+            // Kirim request ke Telegram
             telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
                 method: 'POST',
                 body: formData,
-                headers: formData.getHeaders(), // Hanya menyertakan Content-Type: multipart/form-data; boundary=...
+                headers: formData.getHeaders(),
             });
 
         } else {
-            // --- LOGIKA PENGIRIMAN PESAN Teks Saja (sendMessage) ---
+            // Logika Pengiriman PESAN Teks Saja
             const payload = {
                 chat_id: CHAT_ID,
                 text: caption,
@@ -74,28 +80,18 @@ module.exports = async (req, res) => {
             });
         }
 
-        // Penanganan respons yang kuat untuk menghindari error JSON parsing
-        const responseText = await telegramResponse.text();
-        
-        try {
-            responseData = JSON.parse(responseText);
-        } catch (jsonError) {
-            console.error('Non-JSON Response from Telegram (Kemungkinan Error Telegram API):', responseText);
-            return res.status(telegramResponse.status).json({ 
-                error: `Gagal memproses respons Telegram. Status: ${telegramResponse.status}. Respons mentah: ${responseText.substring(0, 100)}...`
-            });
+        const data = await telegramResponse.json();
+
+        if (!data.ok) {
+            console.error('Telegram API Error:', data.description);
+            res.status(telegramResponse.status).json({ error: data.description || 'Gagal mengirim ke Telegram' });
+            return;
         }
 
-
-        if (!responseData.ok) {
-            console.error('Telegram API Error:', responseData.description);
-            return res.status(400).json({ error: responseData.description || 'Gagal mengirim ke Telegram. Cek Token/Chat ID.' });
-        }
-
-        res.status(200).json({ success: true, telegram_data: responseData });
+        res.status(200).json({ success: true, telegram_data: data });
 
     } catch (error) {
-        console.error('Server Proxy Error - UNCATCHED:', error);
-        res.status(500).json({ error: `Kesalahan internal server tidak terduga: ${error.message}` });
+        console.error('Server Proxy Error:', error);
+        res.status(500).json({ error: 'Kesalahan internal server saat menghubungi Telegram.' });
     }
 };
