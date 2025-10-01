@@ -1,11 +1,13 @@
 {
-  "name": "secure-photobooth",
+  "name": "telegram-photo-proxy",
   "version": "1.0.0",
-  "description": "Secure Telegram Photobooth Proxy",
-  "dependencies": {
-    "form-data": "^4.0.0"
-  },
+  "description": "Proxy for sending photos and data to Telegram Bot.",
+  "main": "api/telegram-proxy.js",
   "scripts": {
-    "start": "echo 'Running Static/Serverless'"
+    "start": "node api/telegram-proxy.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1",
+    "form-data": "^4.0.0"
   }
 }
