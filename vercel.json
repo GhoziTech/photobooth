@@ -1,0 +1,5 @@
+{
+"rewrites": [
+{ "source": "/api/telegram-proxy", "destination": "/api/telegram-proxy.js" }
+]
+}
